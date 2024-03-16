@@ -24,7 +24,7 @@ public class ClientHandler extends Thread{
             String receivedPath = getPath(req);
             boolean isAcceptedPath = isPathAccepted(receivedPath);
             if(!isAcceptedPath) {
-                notFoundResponse();
+                clientSocket.getOutputStream().write(notFoundResponse().getBytes());
                 return;
             }
 
@@ -35,8 +35,10 @@ public class ClientHandler extends Thread{
             }else if(receivedPath.contains("/files")){
                 String fileName = getPathTail(req);
                 if(!isFileExist(this.directory, fileName)){
-                    clientSocket.getOutputStream().write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
+                    clientSocket.getOutputStream().write(notFoundResponse().getBytes());
                     System.out.println("File dosent exist");
+                    clientSocket.getOutputStream().flush();
+                    reader.close();
                     return;
                 }
                 String fileContent = readFile(Paths.get(this.directory, fileName));
@@ -50,8 +52,8 @@ public class ClientHandler extends Thread{
             throw new RuntimeException(e);
         }
     }
-    private void notFoundResponse() throws IOException {
-        clientSocket.getOutputStream().write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
+    private String notFoundResponse() throws IOException {
+        return "HTTP/1.1 404 Not Found\r\n\r\n";
     }
     private boolean isFileExist(String dir, String fileName){
         Path filePath = Paths.get(dir, fileName);
