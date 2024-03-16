@@ -22,8 +22,8 @@ public class clientHandler extends Thread{
             if(isAcceptedPath){
                 path = pathParser(req);
                 response = "HTTP/1.1 200 OK\r\n".concat("Content-Type: text/plain\r\n")
-                        .concat(String.format("Content-Length: %d \r\n", path.length())).concat(String
-                                .format("\r\n %s \r\n", path));
+                        .concat(String.format("Content-Length: %d\r\n", path.length())).concat(String
+                                .format("\r\n%s\r\n", path));
                 System.out.println(response);
                 clientSocket.getOutputStream().write(response.getBytes());
                 return;
