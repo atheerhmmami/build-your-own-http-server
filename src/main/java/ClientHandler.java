@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,16 +31,25 @@ public class ClientHandler extends Thread{
             }else if(receivedPath.contains("/user-agent")){
                 response = getResponse(extractHeader(reader, "User-Agent"),"text/plain");
             }else if(receivedPath.contains("/files")){
+                String method = getAction(req);
                 String fileName = getPathTail(req);
                 if(!isFileExist(this.directory, fileName)){
                     clientSocket.getOutputStream().write(notFoundResponse().getBytes());
-                    System.out.println("File dosent exist");
                     clientSocket.getOutputStream().flush();
                     reader.close();
                     return;
                 }
-                String fileContent = readFile(Paths.get(this.directory, fileName));
-                response = getResponse(fileContent,"application/octet-stream");
+                if(method.equalsIgnoreCase("get")){
+                    String fileContent = readFile(Paths.get(this.directory, fileName));
+                    response = getResponse(fileContent,"application/octet-stream");
+                }else if(method.equalsIgnoreCase("post")){
+                    String fileContent = readBody(reader);
+                    System.out.println(fileContent);
+                    createFile(fileName, fileContent);
+                    response = createdResponse();
+                }else{
+                    System.out.println("No implementation available");
+                }
             }
             System.out.println(response);
             clientSocket.getOutputStream().write(response.getBytes());
@@ -55,9 +62,23 @@ public class ClientHandler extends Thread{
     private String notFoundResponse() throws IOException {
         return "HTTP/1.1 404 Not Found\r\n\r\n";
     }
+    private String createdResponse(){
+        return "HTTP/1.1 201 Created\r\n\r\n";
+    }
     private boolean isFileExist(String dir, String fileName){
         Path filePath = Paths.get(dir, fileName);
         return Files.exists(filePath);
+    }
+    private void createFile(String fileName, String fileContent){
+        BufferedWriter bWriter =
+                null;
+        try {
+            bWriter = new BufferedWriter(new FileWriter(this.directory + "/" + fileName));
+            bWriter.write(fileContent);
+            bWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     private String readFile(Path filePath){
         try {
@@ -86,6 +107,24 @@ public class ClientHandler extends Thread{
                         .format("\r\n%s\r\n", body));
     }
 
+    private String readBody(BufferedReader reader){
+        StringBuilder body = new StringBuilder();
+        boolean isBodyPart = false;
+        try {
+            String line = reader.readLine();
+            while(line != null){
+                if(isBodyPart)
+                    body.append(line);
+                if(line.equalsIgnoreCase("")){
+                    isBodyPart=true;
+                }
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return String.valueOf(body);
+    }
     private String extractHeader(BufferedReader reader, String target){
         String header="";
         String targetValue="";
@@ -126,6 +165,17 @@ public class ClientHandler extends Thread{
         return path.equals("/") || path.contains("/echo") || path.contains("/user-agent") || path.contains("/files");
     }
 
+    private String getAction(String requestLine){
+        String pattern = "^(\\S+)\\s+(/\\S*).*";
+        Pattern regex = Pattern.compile(pattern);
+        Matcher matcher = regex.matcher(requestLine);
+
+        if(!matcher.matches()){
+            System.out.println("INVALID REQUEST");
+            return "invalid";
+        }
+        return matcher.group(1);
+    }
     private String getPath(String requestLine){
         String pattern = "^(\\S+)\\s+(/\\S*).*";
         Pattern regex = Pattern.compile(pattern);
