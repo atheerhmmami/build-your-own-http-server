@@ -33,13 +33,13 @@ public class ClientHandler extends Thread{
             }else if(receivedPath.contains("/files")){
                 String method = getAction(req);
                 String fileName = getPathTail(req);
-                if(!isFileExist(this.directory, fileName)){
-                    clientSocket.getOutputStream().write(notFoundResponse().getBytes());
-                    clientSocket.getOutputStream().flush();
-                    reader.close();
-                    return;
-                }
                 if(method.equalsIgnoreCase("get")){
+                    if(!isFileExist(this.directory, fileName)){
+                        clientSocket.getOutputStream().write(notFoundResponse().getBytes());
+                        clientSocket.getOutputStream().flush();
+                        reader.close();
+                        return;
+                    }
                     String fileContent = readFile(Paths.get(this.directory, fileName));
                     response = getResponse(fileContent,"application/octet-stream");
                 }else if(method.equalsIgnoreCase("post")){
