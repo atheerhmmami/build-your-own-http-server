@@ -35,7 +35,7 @@ public class ClientHandler extends Thread{
             }else if(receivedPath.contains("/files")){
                 String fileName = getPathTail(req);
                 if(!isFileExist(this.directory, fileName)){
-                    notFoundResponse();
+                    clientSocket.getOutputStream().write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
                     System.out.println("File dosent exist");
                     return;
                 }
