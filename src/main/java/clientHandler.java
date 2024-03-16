@@ -31,7 +31,15 @@ public class clientHandler extends Thread{
             }
             System.out.println(response);
             clientSocket.getOutputStream().write(response.getBytes());
-
+            reader.close();
+            close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void close(){
+        try {
+            this.clientSocket.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
