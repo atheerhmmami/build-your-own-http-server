@@ -108,22 +108,19 @@ public class ClientHandler extends Thread{
     }
 
     private String readBody(BufferedReader reader){
+        String[] splitted;
         StringBuilder body = new StringBuilder();
         boolean isBodyPart = false;
         try {
-            String line = reader.readLine();
-            while(line != null){
-                if(isBodyPart)
-                    body.append(line);
-                if(line.equalsIgnoreCase("")){
-                    isBodyPart=true;
-                }
-                line = reader.readLine();
+            while (reader.ready()) {
+                body.append((char)reader.read());
             }
+             splitted = String.valueOf(body).split("\r\n\r\n");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return String.valueOf(body);
+        return splitted[1];
     }
     private String extractHeader(BufferedReader reader, String target){
         String header="";
