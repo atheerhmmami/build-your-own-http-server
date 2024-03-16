@@ -36,6 +36,7 @@ public class ClientHandler extends Thread{
                 String fileName = getPathTail(req);
                 if(!isFileExist(this.directory, fileName)){
                     notFoundResponse();
+                    System.out.println("File dosent exist");
                     return;
                 }
                 String fileContent = readFile(Paths.get(this.directory, fileName));
